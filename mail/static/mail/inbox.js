@@ -67,6 +67,7 @@ function load_mailbox(mailbox) {
         const p = document.createElement('p');
         const subject = document.createElement('p');
         const time = document.createElement('p');
+        const archive = document.createElement('button');
         const button = document.createElement('button');
 
         p.innerHTML = email[i].sender;
@@ -74,16 +75,42 @@ function load_mailbox(mailbox) {
         time.innerHTML = email[i].timestamp;
         // element.id = e.id; For now i don't need this
         // button.id = email[i].id;
-        button.className = `View-${email[i].id}`;
+        // archive.className = "archive-button";
+        archive.id = `archive-${email[i].id}`;
+        archive.innerHTML = "Archive";
+        archive.value = email[i].id;
+        // button.className = "view-button";
+        // button.className = `view-${email[i].id}`;
+        button.id = `view-${email[i].id}`;
         button.innerHTML = "View";
         button.value = email[i].id;
+
         element.appendChild(p);
         element.appendChild(subject);
         element.appendChild(time);
+        element.appendChild(archive);
         element.appendChild(button);
 
-        document.querySelector(`.View-${email[i].id}`).addEventListener('click', () => load_mail(email[i].id));
+        document.querySelector(`#archive-${email[i].id}`).addEventListener('click', () => archive_email(email[i].id));
+        // document.querySelector(".view-button").addEventListener('click', () => load_mail(email[i].id)); // Check why with querySelectorAll and classNames can't add event listener
+        document.querySelector(`#view-${email[i].id}`).addEventListener('click', () => load_mail(email[i].id));
       }
+
+      // FIX THIS ONE
+      // email.forEach(e => {
+      //   const element = document.createElement('div');
+      //   element.className = "email-box";
+      //   document.querySelector('#emails-view').append(element);
+
+      //   const p = document.createElement('p');
+      //   const subject = document.createElement('p');
+
+      //   p.innerHTML = e.id;
+      //   subject.innerHTML = e.subject; 
+
+      //   element.appendChild(p);
+      //   element.appendChild(subject);
+      // });
 
       // ... do something else with emails ...
       // email.forEach(e => {
@@ -114,10 +141,9 @@ function load_mailbox(mailbox) {
 function load_mail(id) {
 
   // Create a new div to display the email
-  bigDiv = document.createElement('div');
-  bigDiv.id = "full-view";
-  document.querySelector
-  document.querySelector('#emails-view').replaceChildren(bigDiv);
+  // bigDiv = document.createElement('div');
+  // bigDiv.id = "full-view";
+  // document.querySelector('#emails-view').replaceChildren(bigDiv);
   
 
   // Show the email and hide other views
@@ -135,8 +161,11 @@ function load_mail(id) {
 
     // ... do something else with email ...
     const element = document.createElement('div');
+    const reply = document.createElement('button');
     element.id = "full-view";
-    document.querySelector('#full-view').append(element);
+    reply.id = "reply-button";
+    reply.innerHTML = "Reply";
+    document.querySelector('#emails-view').replaceChildren(element);
 
     const from = document.createElement('p');
     const to = document.createElement('p');
@@ -149,9 +178,25 @@ function load_mail(id) {
     body.innerHTML = `<strong>Body:</strong> ${email.body}`;
     timestamp.innerHTML = `<strong>Timestamp:</strong> ${email.timestamp}`;
     
+    element.appendChild(reply);
     element.appendChild(from);
     element.appendChild(to);
     element.appendChild(body);
     element.appendChild(timestamp);
+
+    document.querySelector('#reply-button').addEventListener('click', () => compose_email());
   });
+}
+
+function archive_email(id) {
+  fetch(`/emails/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      archived: true
+    })
+  })
+}
+
+function reply_template() {
+  template = `<`
 }
