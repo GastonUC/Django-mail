@@ -22,9 +22,21 @@ function compose_email() {
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
 
-  // Send email
-  document.querySelector('#compose-form').addEventListener('submit', (event) => {
+  // Get the form and the submit button
+  const composeForm = document.querySelector('#compose-form');
+  const submitButton = document.querySelector('#compose-form input[type="submit"]');
+
+  // Remove any previous evnet listener to prevent duplication
+  composeForm.removeEventListener('submit', submithandler);
+
+  // Add submit event listener
+  composeForm.addEventListener('submit', submithandler);
+
+  // submit handler function
+  function submithandler(event) {
     event.preventDefault();
+
+    submitButton.disabled = true;
     fetch('/emails', {
       method: 'POST',
       body: JSON.stringify({
@@ -34,169 +46,147 @@ function compose_email() {
       })
     })
     .then(response => response.json())
-    .then(() => load_mailbox('sent'))
     .then(result => {
-      // Print result
-      console.log(result);
+      console.log(result); // Only debugging
+      load_mailbox('sent')
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    })
+    .finally(() => {
+      submitButton.disabled = false;
     });
-  });
+  }
 }
 
 function load_mailbox(mailbox) {
 
   // Show the mailbox and hide other views
-  document.querySelector('#emails-view').style.display = 'block';
+  const emailsView = document.querySelector('#emails-view');
+  emailsView.style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
+  // Clear previous content in #emails-view
+  emailsView.replaceChildren();
+  
   // Show the mailbox name
-  document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+  emailsView.innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
   // Display the emails in the mailbox
   fetch(`/emails/${mailbox}`)
   .then(response => response.json())
   .then(email => {
-      // Print emails
-      console.log(email);
-      console.log(email.length);
+    console.log(email);
 
-      for(let i = 0; i < email.length; i++) {
-        const element = document.createElement('div');
-        element.className = "email-box";
-        document.querySelector('#emails-view').append(element);
+    //   const element = document.createElement('div');
+    //   element.className = "email-box";
+    //   document.querySelector('#emails-view').append(element);
 
-        const p = document.createElement('p');
-        const subject = document.createElement('p');
-        const time = document.createElement('p');
-        const archive = document.createElement('button');
-        const button = document.createElement('button');
+    // First box view with elements not aligned horizontally
+    //   element.innerHTML = email.map(e => `
+    //     <div class="card mb-3 email-item" onclick="load_mail(${e.id})">
+    //         <div class="card-body">
+    //             <h6 class="card-subtitle mb-2 text-muted">From: ${e.sender}</h6>
+    //             <h5 class="card-title">${e.subject}</h5>
+    //             <p class="card-text text-muted">${e.timestamp}</p>
+    //             <button class="btn btn-primary btn-sm me-2" onclick="replyToEmail(${e.id})">Reply</button>
+    //         </div>
+    //     </div>
+    // `).join('');
 
-        p.innerHTML = email[i].sender;
-        subject.innerHTML = email[i].subject;
-        time.innerHTML = email[i].timestamp;
-        // element.id = e.id; For now i don't need this
-        // button.id = email[i].id;
-        // archive.className = "archive-button";
-        archive.id = `archive-${email[i].id}`;
-        archive.innerHTML = "Archive";
-        archive.value = email[i].id;
-        // button.className = "view-button";
-        // button.className = `view-${email[i].id}`;
-        button.id = `view-${email[i].id}`;
-        button.innerHTML = "View";
-        button.value = email[i].id;
-
-        element.appendChild(p);
-        element.appendChild(subject);
-        element.appendChild(time);
-        element.appendChild(archive);
-        element.appendChild(button);
-
-        document.querySelector(`#archive-${email[i].id}`).addEventListener('click', () => archive_email(email[i].id));
-        // document.querySelector(".view-button").addEventListener('click', () => load_mail(email[i].id)); // Check why with querySelectorAll and classNames can't add event listener
-        document.querySelector(`#view-${email[i].id}`).addEventListener('click', () => load_mail(email[i].id));
-      }
-
-      // FIX THIS ONE
-      // email.forEach(e => {
-      //   const element = document.createElement('div');
-      //   element.className = "email-box";
-      //   document.querySelector('#emails-view').append(element);
-
-      //   const p = document.createElement('p');
-      //   const subject = document.createElement('p');
-
-      //   p.innerHTML = e.id;
-      //   subject.innerHTML = e.subject; 
-
-      //   element.appendChild(p);
-      //   element.appendChild(subject);
-      // });
-
-      // ... do something else with emails ...
-      // email.forEach(e => {
-      //   const element = document.createElement('div');
-      //   const body = document.createElement('p');
-      //   const p = document.createElement('p');
-      //   const time = document.createElement('p');
-      //   const button = document.createElement('button');
-      //   element.id = "email-box";
-      //   body.innerHTML = e.subject;
-      //   p.innerHTML = e.sender;
-      //   time.innerHTML = e.timestamp;
-      //   // element.id = e.id; For now i don't need this
-      //   button.id = "show-email";
-      //   button.innerHTML = "View";
-      //   button.value = e.id;
-      //   document.querySelector('#emails-view').append(element);
-      //   document.querySelector('#email-box').appendChild(body);
-      //   document.querySelector('#email-box').appendChild(p);
-      //   document.querySelector('#email-box').appendChild(time);
-      //   document.querySelector('#email-box').appendChild(button);
-
-      //   document.querySelector('#show-email').addEventListener('click', () => load_mail(e.id));
-      // });
+    const element = document.createElement('div');
+    element.className = "email-box";
+    // element.style.backgroundColor = email.read ? '#f0f0f0' : '#000000';
+    element.innerHTML = `
+        ${email.map(e => `
+            <a href="#" class="list-group-item list-group-item-action" onclick="load_email(${e.id}, '${mailbox}')" style="background-color: ${e.read ? '#f0f0f0' : '#ffffff'}">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div class="col-3"><strong>${e.sender}</strong></div>
+                    <div class="col-6">${e.subject}</div>
+                    <small class="col-3 text-right">${e.timestamp}</small>
+                </div>
+            </a>
+        `).join('')}
+    `;
+    document.querySelector('#emails-view').append(element);
   });
 }
 
-function load_mail(id) {
-
-  // Create a new div to display the email
-  // bigDiv = document.createElement('div');
-  // bigDiv.id = "full-view";
-  // document.querySelector('#emails-view').replaceChildren(bigDiv);
-  
-
-  // Show the email and hide other views
-  // document.querySelector('#emails-view').style.display = 'block';
-  // document.querySelector('#compose-view').style.display = 'none';
-  // document.querySelector('#full-view').style.display = 'block';
-
-  // Display the email
+function load_email(id, mailbox) {
+  // Fetch the email details
   fetch(`/emails/${id}`)
   .then(response => response.json())
   .then(email => {
     // Print email
-    console.log(email);
-    console.log(id);
+    // console.log(email);
+    // console.log(id);
 
-    // ... do something else with email ...
-    const element = document.createElement('div');
-    const reply = document.createElement('button');
-    element.id = "full-view";
-    reply.id = "reply-button";
-    reply.innerHTML = "Reply";
-    document.querySelector('#emails-view').replaceChildren(element);
+    const el = document.createElement('div');
+    el.id = "full-view";
+    document.querySelector('#emails-view').replaceChildren(el);
 
-    const from = document.createElement('p');
-    const to = document.createElement('p');
-    const body = document.createElement('p');
-    const timestamp = document.createElement('p');
+    const recipients = email.recipients.join(', ');
 
-    element.innerHTML = `<h3>Subject: ${email.subject}</h3>`;
-    from.innerHTML = `<strong>From:</strong> ${email.sender}`;
-    to.innerHTML = `<strong>To:</strong> ${email.recipients}`;
-    body.innerHTML = `<strong>Body:</strong> ${email.body}`;
-    timestamp.innerHTML = `<strong>Timestamp:</strong> ${email.timestamp}`;
-    
-    element.appendChild(reply);
-    element.appendChild(from);
-    element.appendChild(to);
-    element.appendChild(body);
-    element.appendChild(timestamp);
+    el.innerHTML = `
+          <div class="email-full">
+              <h2>${email.subject}</h2>
+              <div class="email-metadata">
+                  <p><strong>From:</strong> ${email.sender}</p>
+                  <p><strong>To:</strong> ${recipients}</p>
+                  <p><strong>Date:</strong> ${email.timestamp}</p>
+              </div>
+              <hr>
+              <div class="email-body">
+                  <p>${email.body}</p>
+              </div>
+              <div class="email-actions mt-4">
+                  <button class="btn btn-primary" onclick="reply_email(${email.id})">Reply</button>
+                  ${mailbox !== 'sent' ? `
+                    <button class="btn btn-secondary" id="archive-btn">${email.archived ? 'Unarchive' : 'Archive'}</button>
+                    ` : ''}
+                  <button class="btn btn-outline-primary" onclick="load_mailbox('inbox')">Back to Inbox</button>
+              </div>
+          </div>
+      `;
 
-    document.querySelector('#reply-button').addEventListener('click', () => compose_email());
+      if (mailbox !== 'inbox') {
+        fetch(`/emails/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            read: true
+          })
+        });
+      }
+
+      if (mailbox !== 'sent') {
+        document.querySelector("#archive-btn").addEventListener("click", () => {
+          archive_email(email.id, !email.archived); // This will return the opposite state
+          load_mailbox('inbox');
+        });
+      }
   });
 }
 
-function archive_email(id) {
+function archive_email(id, archive_state) {
   fetch(`/emails/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
-      archived: true
+      archived: archive_state
     })
-  })
+  });
 }
 
-function reply_template() {
-  template = `<`
+function reply_email(id) {
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+      compose_email();
+      document.querySelector("#compose-recipients").value = email.recipients;
+      if (email.subject.slice(0, 4) === 'Re: ') {
+        document.querySelector("#compose-subject").value = email.subject;
+      } else {
+        document.querySelector("#compose-subject").value = `Re: ${email.subject}`;
+      }
+      document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: ${email.body}`;
+  })
 }
