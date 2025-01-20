@@ -26,14 +26,20 @@ function compose_email() {
   const composeForm = document.querySelector('#compose-form');
   const submitButton = document.querySelector('#compose-form input[type="submit"]');
 
+  // Clean up any existing event listeners to prevent duplication
+  const newComposeForm = composeForm.cloneNode(true);
+  composeForm.parentNode.replaceChild(newComposeForm, composeForm);
+
+  newComposeForm.addEventListener('submit', function submithandler(event) {
+
   // Remove any previous evnet listener to prevent duplication
-  composeForm.removeEventListener('submit', submithandler);
+  // composeForm.removeEventListener('submit', submithandler);
 
   // Add submit event listener
-  composeForm.addEventListener('submit', submithandler);
+  // composeForm.addEventListener('submit', submithandler);
 
   // submit handler function
-  function submithandler(event) {
+  // function submithandler(event) {
     event.preventDefault();
 
     submitButton.disabled = true;
@@ -56,9 +62,11 @@ function compose_email() {
     .finally(() => {
       submitButton.disabled = false;
     });
-  }
+  });
+  // }
 }
 
+// TODO: Fix recipients display on setn mailbox
 function load_mailbox(mailbox) {
 
   // Show the mailbox and hide other views
@@ -75,41 +83,44 @@ function load_mailbox(mailbox) {
   // Display the emails in the mailbox
   fetch(`/emails/${mailbox}`)
   .then(response => response.json())
-  .then(email => {
-    console.log(email);
+  .then(emails => {
+    console.log(emails);
 
-    //   const element = document.createElement('div');
-    //   element.className = "email-box";
-    //   document.querySelector('#emails-view').append(element);
+    const emailList = document.createElement('div');
+    emailList.className = "email-box";
 
-    // First box view with elements not aligned horizontally
-    //   element.innerHTML = email.map(e => `
-    //     <div class="card mb-3 email-item" onclick="load_mail(${e.id})">
-    //         <div class="card-body">
-    //             <h6 class="card-subtitle mb-2 text-muted">From: ${e.sender}</h6>
-    //             <h5 class="card-title">${e.subject}</h5>
-    //             <p class="card-text text-muted">${e.timestamp}</p>
-    //             <button class="btn btn-primary btn-sm me-2" onclick="replyToEmail(${e.id})">Reply</button>
-    //         </div>
-    //     </div>
-    // `).join('');
+    emails.forEach(email => {
+      const emailItem = document.createElement('div')
+      emailItem.className = "list-group-item list-group-item-action";
+      emailItem.style.cursor = "pointer";
+      emailItem.steylebackgroundColor = email.read ? '#f0f0f0' : '#ffffff';
+      emailItem.innerHTML = `
+        <div class="d-flex w-100 justify-content-between align-items-center">
+        ${mailbox === 'sent' ? `<div class="col-3"><strong>${email.recipients}</strong></div>` : `<div class="col-3"><strong>${email.sender}</strong></div>`}
+          <div class="col-6">${email.subject}</div>
+          <small class="col-3 text-right">${email.timestamp}</small>
+        </div>
+      `;
+      emailItem.addEventListener('click',() => load_email(email.id, mailbox));
+      emailList.append(emailItem);
+    });
 
-    const element = document.createElement('div');
-    element.className = "email-box";
-    // element.style.backgroundColor = email.read ? '#f0f0f0' : '#000000';
-    element.innerHTML = `
-        ${email.map(e => `
-            <a href="#" class="list-group-item list-group-item-action" onclick="load_email(${e.id}, '${mailbox}')" style="background-color: ${e.read ? '#f0f0f0' : '#ffffff'}">
-                <div class="d-flex w-100 justify-content-between align-items-center">
-                    <div class="col-3"><strong>${e.sender}</strong></div>
-                    <div class="col-6">${e.subject}</div>
-                    <small class="col-3 text-right">${e.timestamp}</small>
-                </div>
-            </a>
-        `).join('')}
-    `;
-    document.querySelector('#emails-view').append(element);
+    document.querySelector('#emails-view').append(emailList);
   });
+    // element.style.backgroundColor = email.read ? '#f0f0f0' : '#000000';
+  //   element.innerHTML = `
+  //       ${email.map(e => `
+  //           <a href="#" class="list-group-item list-group-item-action" onclick="load_email(${e.id}, '${mailbox}')" style="background-color: ${e.read ? '#f0f0f0' : '#ffffff'}">
+  //               <div class="d-flex w-100 justify-content-between align-items-center">
+  //                   <div class="col-3"><strong>${e.sender}</strong></div>
+  //                   <div class="col-6">${e.subject}</div>
+  //                   <small class="col-3 text-right">${e.timestamp}</small>
+  //               </div>
+  //           </a>
+  //       `).join('')}
+  //   `;
+  //   document.querySelector('#emails-view').append(element);
+  // });
 }
 
 function load_email(id, mailbox) {
@@ -176,17 +187,29 @@ function archive_email(id, archive_state) {
   });
 }
 
+// TODO: Fix pre-fill format
 function reply_email(id) {
   fetch(`/emails/${id}`)
   .then(response => response.json())
   .then(email => {
+      // open compose view
       compose_email();
-      document.querySelector("#compose-recipients").value = email.recipients;
-      if (email.subject.slice(0, 4) === 'Re: ') {
-        document.querySelector("#compose-subject").value = email.subject;
-      } else {
-        document.querySelector("#compose-subject").value = `Re: ${email.subject}`;
-      }
-      document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: ${email.body}`;
+
+      // Pre-fill composition fields
+      document.querySelector("#compose-recipients").value = email.sender;
+      const subjectPrefix = 'Re: ';
+      document.querySelector("#compose-subject").value = email.subject.startsWith(subjectPrefix) 
+      ? email.subject 
+      : `${subjectPrefix}${email.subject}`;
+
+      // reply format body
+      const replyBody = `
+On ${email.timestamp} ${email.sender} wrote:
+----------------------------------------
+${email.body}
+----------------------------------------
+`;
+
+      document.querySelector('#compose-body').value = replyBody.trim();
   })
 }
