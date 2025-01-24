@@ -78,14 +78,16 @@ function load_mailbox(mailbox) {
     emails.forEach(email => {
       const emailItem = document.createElement('div')
       emailItem.className = "list-group-item list-group-item-action";
-      emailItem.style.cursor = "pointer";
-      emailItem.style.backgroundColor = email.read ? '#f0f0f0' : '#ffffff';
+      emailItem.style.backgroundColor = email.read ? '#dedede' : '#f9fafb';
 
       emailItem.innerHTML = `
         <div class="d-flex w-100 justify-content-between align-items-center">
-        ${mailbox === 'sent' ? `<div class="col-3"><strong>${email.recipients}</strong></div>` : `<div class="col-3"><strong>${email.sender}</strong></div>`}
+          ${mailbox === 'sent'
+            ? `<div class="col-3"><strong>${email.recipients}</strong></div>`
+            : `<div class="col-3"><strong>${email.sender}</strong></div>`
+          }
           <div class="col-6">${email.subject}</div>
-          <small class="col-3 text-right">${email.timestamp}</small>
+          <small class="col-3 text-right text-muted">${email.timestamp}</small>
         </div>
       `;
 
@@ -103,16 +105,16 @@ function load_email(id, mailbox) {
   .then(response => response.json())
   .then(email => {
 
-    const el = document.createElement('div');
-    el.id = "full-view";
-    document.querySelector('#emails-view').replaceChildren(el);
+    const emailContainer = document.createElement('div');
+    emailContainer.id = "full-view";
+    document.querySelector('#emails-view').replaceChildren(emailContainer);
 
     const recipients = email.recipients.join(', ');
 
     let body = email.body;
     body = body.replace(/\n/g, "<br>");
 
-    el.innerHTML = `
+    emailContainer.innerHTML = `
           <div class="email-full">
               <h2>${email.subject}</h2>
               <div class="email-metadata">
