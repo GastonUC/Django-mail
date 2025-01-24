@@ -2,14 +2,38 @@
 {% load static %}
 
 {% block body %}
-    <h2>{{ request.user.email }}</h2>
+    <div class="container-fluid bg-white border-bottom shadow-sm">
+        <div class="container py-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <h2 class="h5 mb-0 me-4 text-secondary">{{ request.user.email }}</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" id="inbox">Inbox</button>
+                        <button class="btn btn-sm btn-outline-primary" id="compose">Compose</button>
+                        <button class="btn btn-sm btn-outline-primary" id="sent">Sent</button>
+                        <button class="btn btn-sm btn-outline-primary" id="archived">Archived</button>
+                    </div>
+                </div>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'logout' %}">Log Out</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-4">
+        <div class="bg-white rounded-3 shadow-sm">            
+            <div id="emails-view" class="list-group list-group-flush">
+            </div>
+        </div>
+    </div>
+    
+    <!-- <h2>{{ request.user.email }}</h2>
 
     <button class="btn btn-sm btn-outline-primary" id="inbox">Inbox</button>
     <button class="btn btn-sm btn-outline-primary" id="compose">Compose</button>
     <button class="btn btn-sm btn-outline-primary" id="sent">Sent</button>
     <button class="btn btn-sm btn-outline-primary" id="archived">Archived</button>
     <a class="btn btn-sm btn-outline-primary" href="{% url 'logout' %}">Log Out</a>
-    <hr>
+    <hr> -->
 
     <div id="emails-view">
     </div>
@@ -17,17 +41,17 @@
     <div id="compose-view">
         <h3>New Email</h3>
         <form id="compose-form">
-            <div class="form-group">
+            <div class="form-group mb-3">
                 From: <input disabled class="form-control" value="{{ request.user.email }}">
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 To: <input id="compose-recipients" class="form-control">
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <input class="form-control" id="compose-subject" placeholder="Subject">
             </div>
-            <textarea class="form-control" id="compose-body" placeholder="Body"></textarea>
-            <input type="submit" class="btn btn-primary"/>
+            <textarea class="form-control mb-3" id="compose-body" placeholder="Body"></textarea>
+            <input type="submit" class="btn btn-primary" value="Send"/>
         </form>
     </div>
 {% endblock %}

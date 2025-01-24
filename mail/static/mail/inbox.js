@@ -66,7 +66,7 @@ function load_mailbox(mailbox) {
   emailsView.replaceChildren();
   
   // Show the mailbox name
-  emailsView.innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+  emailsView.innerHTML = `<h3 id="boxTitle" class="p-3 border-bottom mb-0 h5">${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
   // Display the emails in the mailbox
   fetch(`/emails/${mailbox}`)
@@ -77,19 +77,33 @@ function load_mailbox(mailbox) {
 
     emails.forEach(email => {
       const emailItem = document.createElement('div')
-      emailItem.className = "list-group-item list-group-item-action";
-      emailItem.style.backgroundColor = email.read ? '#dedede' : '#f9fafb';
+      emailItem.className = "list-group-item border-start-0 border-end-0";
+      emailItem.style.backgroundColor = email.read ? 'rgba(222, 222, 222, 0.4)' : '#f9fafb';
 
       emailItem.innerHTML = `
-        <div class="d-flex w-100 justify-content-between align-items-center">
-          ${mailbox === 'sent'
-            ? `<div class="col-3"><strong>${email.recipients}</strong></div>`
-            : `<div class="col-3"><strong>${email.sender}</strong></div>`
-          }
-          <div class="col-6">${email.subject}</div>
-          <small class="col-3 text-right text-muted">${email.timestamp}</small>
-        </div>
-      `;
+                    <div class="row align-items-center py-2">
+                        <div class="col-3 text-truncate">
+                          <span class="text-secondary">${mailbox === 'sent' ? email.recipients : email.sender}</span>
+                        </div>
+                        <div class="col-6 text-truncate">
+                            <span class="fw-medium">${email.subject}</span>
+                        </div>
+                        <div class="col-3 text-end">
+                            <small class="text-muted">${email.timestamp}</small>
+                        </div>
+                    </div>
+                `;
+
+      // emailItem.innerHTML = `
+      //   <div class="d-flex w-100 justify-content-between align-items-center">
+      //     ${mailbox === 'sent'
+      //       ? `<div class="col-3"><strong>${email.recipients}</strong></div>`
+      //       : `<div class="col-3"><strong>${email.sender}</strong></div>`
+      //     }
+      //     <div class="col-6">${email.subject}</div>
+      //     <small class="col-3 text-right text-muted">${email.timestamp}</small>
+      //   </div>
+      // `;
 
       emailItem.addEventListener('click',() => load_email(email.id, mailbox));
       emailList.append(emailItem);
@@ -115,26 +129,63 @@ function load_email(id, mailbox) {
     body = body.replace(/\n/g, "<br>");
 
     emailContainer.innerHTML = `
-          <div class="email-full">
-              <h2>${email.subject}</h2>
-              <div class="email-metadata">
-                  <p><strong>From:</strong> ${email.sender}</p>
-                  <p><strong>To:</strong> ${recipients}</p>
-                  <p><strong>Date:</strong> ${email.timestamp}</p>
-              </div>
-              <hr>
-              <div class="email-body">
-                  <p>${body}</p>
-              </div>
-              <div class="email-actions mt-4">
-                  <button class="btn btn-primary" onclick="reply_email(${email.id})">Reply</button>
-                  ${mailbox !== 'sent' ? `
-                    <button class="btn btn-secondary" id="archive-btn">${email.archived ? 'Unarchive' : 'Archive'}</button>
-                    ` : ''}
-                  <button class="btn btn-outline-primary" onclick="load_mailbox('inbox')">Back to Inbox</button>
-              </div>
-          </div>
-      `;
+    <div class="bg-white rounded-3 shadow-sm p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0">${email.subject}</h2>
+            <div>
+                <button class="btn btn-outline-primary btn-sm" onclick="reply_email(${email.id})">Reply</button>
+                ${mailbox !== 'sent' ? `
+                <button class="btn btn-outline-secondary btn-sm" id="archive-btn">
+                    ${email.archived ? 'Unarchive' : 'Archive'}
+                </button>
+                ` : ''}
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <strong>From:</strong> ${email.sender}
+                    </div>
+                    <div class="text-muted">
+                        ${email.timestamp}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>To:</strong> ${recipients}
+                </div>
+            </div>
+        </div>
+        <div class="email-body mb-4">
+            ${body}
+        </div>
+        <div class="text-end">
+            <button class="btn btn-secondary" onclick="load_mailbox('inbox')">Back to Inbox</button>
+        </div>
+    </div>
+  `;
+
+    // emailContainer.innerHTML = `
+    //       <div class="email-full">
+    //           <h2>${email.subject}</h2>
+    //           <div class="email-metadata">
+    //               <p><strong>From:</strong> ${email.sender}</p>
+    //               <p><strong>To:</strong> ${recipients}</p>
+    //               <p><strong>Date:</strong> ${email.timestamp}</p>
+    //           </div>
+    //           <hr>
+    //           <div class="email-body">
+    //               <p>${body}</p>
+    //           </div>
+    //           <div class="email-actions mt-4">
+    //               <button class="btn btn-primary" onclick="reply_email(${email.id})">Reply</button>
+    //               ${mailbox !== 'sent' ? `
+    //                 <button class="btn btn-secondary" id="archive-btn">${email.archived ? 'Unarchive' : 'Archive'}</button>
+    //                 ` : ''}
+    //               <button class="btn btn-outline-primary" onclick="load_mailbox('inbox')">Back to Inbox</button>
+    //           </div>
+    //       </div>
+    //   `;
 
       if (mailbox !== 'inbox') {
         fetch(`/emails/${id}`, {
