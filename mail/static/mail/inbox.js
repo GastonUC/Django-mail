@@ -72,13 +72,18 @@ function load_mailbox(mailbox) {
   fetch(`/emails/${mailbox}`)
   .then(response => response.json())
   .then(emails => {
+    console.log(emails);
     const emailList = document.createElement('div');
     emailList.className = "email-box";
 
     emails.forEach(email => {
       const emailItem = document.createElement('div')
       emailItem.className = "list-group-item border-start-0 border-end-0";
-      emailItem.style.backgroundColor = email.read ? 'rgba(222, 222, 222, 0.4)' : '#f9fafb';
+      if (mailbox === 'sent') {
+        emailItem.style.backgroundColor = 'rgba(222, 222, 222, 0.4)';
+      } else {
+        emailItem.style.backgroundColor = email.read ? 'rgba(222, 222, 222, 0.4)' : '#fcfeff';
+      }
 
       emailItem.innerHTML = `
                     <div class="row align-items-center py-2">
@@ -160,7 +165,7 @@ function load_email(id, mailbox) {
             ${body}
         </div>
         <div class="text-end">
-            <button class="btn btn-secondary" onclick="load_mailbox('inbox')">Back to Inbox</button>
+            <button class="btn btn-secondary">Back to Inbox</button>
         </div>
     </div>
   `;
@@ -187,21 +192,23 @@ function load_email(id, mailbox) {
     //       </div>
     //   `;
 
-      if (mailbox !== 'inbox') {
-        fetch(`/emails/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            read: true
-          })
-        });
-      }
+    // Add event listener to the back button
+    document.querySelector('.btn-secondary').addEventListener('click', () => load_mailbox('inbox'));
 
-      if (mailbox !== 'sent') {
-        document.querySelector("#archive-btn").addEventListener("click", () => {
-          archive_email(email.id, !email.archived); // This will return the opposite state
-          load_mailbox('inbox');
-        });
-      }
+    // Mark email as read
+    fetch(`/emails/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        read: true
+      })
+    });
+
+    // If mailbox isn't 'sent', then add event listener to the archive button
+    if (mailbox !== 'sent') {
+      document.querySelector("#archive-btn").addEventListener("click", () => {
+        archive_email(email.id, !email.archived); // This will return the opposite state
+      });
+    }
   });
 }
 
@@ -212,6 +219,7 @@ function archive_email(id, archive_state) {
       archived: archive_state
     })
   });
+  load_mailbox('inbox');
 }
 
 function reply_email(id) {
@@ -221,8 +229,16 @@ function reply_email(id) {
       // open compose view
       compose_email();
 
+      const user_email = document.querySelector('h2').textcontent;
+
       // Pre-fill composition fields
+      // recept = email.recipients;
+      // let rest_recipients = recept.slice(recept.indexOf(user_email));
+      // const recipients = email.sender + rest_recipients.join(', ');
+      // const recipients = email.recipients.join(', ');
+      // document.querySelector("#compose-recipients").value = recipients;
       document.querySelector("#compose-recipients").value = email.sender;
+
       const subjectPrefix = 'Re: ';
       document.querySelector("#compose-subject").value = email.subject.startsWith(subjectPrefix) 
       ? email.subject 
